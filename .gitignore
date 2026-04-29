@@ -1,4 +1,5 @@
 venv/
 .env
 *.onnx
-*.binstockfish-windows-x86-64-avx2/
+*.bin
+stockfish-windows-x86-64-avx2/
