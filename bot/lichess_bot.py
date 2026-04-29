@@ -2,8 +2,9 @@ import berserk
 import chess
 import chess.engine
 import threading
-from commentary import generate_commentary
-from voice import speak
+from bot.commentary import generate_commentary
+from bot.voice import speak
+from bot.twitch_chat import start_twitch_bot
 import os
 from dotenv import load_dotenv
 
@@ -47,11 +48,9 @@ def handle_game(game_id):
             move_uci = get_best_move(board.fen())
             move_obj = chess.Move.from_uci(move_uci)
 
-            # Joue le coup immédiatement
             client.bots.make_move(game_id, move_uci)
             print(f"Coup joué : {move_uci}")
 
-            # Commentaire + voix en arrière-plan
             def comment_and_speak(b=board, m=move_obj):
                 commentary = generate_commentary(b, m)
                 print(f"Commentaire : {commentary}")
@@ -67,6 +66,10 @@ def main():
         print("Compte upgradé en bot ✅")
     except:
         print("Déjà bot ✅")
+
+    # Lance le chat Twitch en arrière-plan
+    threading.Thread(target=start_twitch_bot, daemon=True).start()
+    print("Chat Twitch lancé ✅")
 
     for event in client.bots.stream_incoming_events():
         if event["type"] == "challenge":
