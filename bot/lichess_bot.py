@@ -1,6 +1,9 @@
 import berserk
 import chess
 import chess.engine
+import threading
+from commentary import generate_commentary
+from voice import speak
 import os
 from dotenv import load_dotenv
 
@@ -21,7 +24,8 @@ def get_best_move(fen, time_limit=0.1):
 def handle_game(game_id):
     print(f"Partie lancée : {game_id}")
     board = chess.Board()
-    
+    bot_color = "white"
+
     for event in client.bots.stream_game_state(game_id):
         if event["type"] == "gameFull":
             moves = event["state"]["moves"].split()
@@ -32,22 +36,32 @@ def handle_game(game_id):
             continue
 
         board = chess.Board()
-        for move in moves:
-            if move:
-                board.push_uci(move)
+        for m in moves:
+            if m:
+                board.push_uci(m)
 
         is_bot_turn = (board.turn == chess.WHITE and bot_color == "white") or \
                       (board.turn == chess.BLACK and bot_color == "black")
 
         if is_bot_turn and not board.is_game_over():
-            move = get_best_move(board.fen())
-            client.bots.make_move(game_id, move)
-            print(f"Coup joué : {move}")
+            move_uci = get_best_move(board.fen())
+            move_obj = chess.Move.from_uci(move_uci)
+
+            # Joue le coup immédiatement
+            client.bots.make_move(game_id, move_uci)
+            print(f"Coup joué : {move_uci}")
+
+            # Commentaire + voix en arrière-plan
+            def comment_and_speak(b=board, m=move_obj):
+                commentary = generate_commentary(b, m)
+                print(f"Commentaire : {commentary}")
+                speak(commentary)
+
+            threading.Thread(target=comment_and_speak, daemon=True).start()
 
 def main():
     print("TanukiChessBot démarré...")
-    
-    # Upgrade du compte en bot (une seule fois)
+
     try:
         client.bots.upgrade_to_bot()
         print("Compte upgradé en bot ✅")
