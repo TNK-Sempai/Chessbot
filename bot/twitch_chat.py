@@ -4,8 +4,30 @@ import os
 from dotenv import load_dotenv
 import threading
 from bot.voice import speak
+from bot.stats import get_score_text
 
 load_dotenv()
+
+# File d'attente globale
+_queue = []
+_queue_lock = threading.Lock()
+
+def get_queue():
+    with _queue_lock:
+        return list(_queue)
+
+def pop_queue():
+    with _queue_lock:
+        if _queue:
+            return _queue.pop(0)
+        return None
+
+def add_to_queue(username):
+    with _queue_lock:
+        if username not in _queue:
+            _queue.append(username)
+            return len(_queue)
+        return None
 
 class TanukiBot(commands.Bot):
     def __init__(self):
@@ -29,9 +51,32 @@ class TanukiBot(commands.Bot):
 
     @commands.command(name="defi")
     async def defi(self, ctx):
-        await ctx.send(f"@{ctx.author.name} Le Tanuki accepte ton défi ! Va sur lichess.org/@/TanukiChessBot pour me défier ♟️")
+        position = add_to_queue(ctx.author.name)
+        if position:
+            if position == 1:
+                await ctx.send(f"@{ctx.author.name} Tu es le prochain à affronter le Tanuki ! ♟️")
+                speak(f"{ctx.author.name} is next to challenge the Tanuki.")
+            else:
+                await ctx.send(f"@{ctx.author.name} Tu es #{position} dans la file d'attente. ♟️")
+                speak(f"{ctx.author.name} joins the queue at position {position}.")
+        else:
+            await ctx.send(f"@{ctx.author.name} Tu es déjà dans la file d'attente !")
+
+    @commands.command(name="file")
+    async def file(self, ctx):
+        queue = get_queue()
+        if not queue:
+            await ctx.send("La file d'attente est vide — défie le Tanuki avec !defi ♟️")
+        else:
+            queue_text = " → ".join([f"#{i+1} {name}" for i, name in enumerate(queue)])
+            await ctx.send(f"File d'attente : {queue_text}")
+
+    @commands.command(name="score")
+    async def score(self, ctx):
+        score_text = get_score_text()
+        await ctx.send(score_text)
         def speak_async():
-            speak(f"{ctx.author.name} has challenged the Tanuki. Come and face me on Lichess.")
+            speak(score_text)
         threading.Thread(target=speak_async, daemon=True).start()
 
     @commands.command(name="question")

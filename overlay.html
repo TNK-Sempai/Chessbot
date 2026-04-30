@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: transparent;
+            overflow: hidden;
+        }
+
+        .stats {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 8px 20px;
+            background: rgba(13, 13, 13, 0.85);
+            border-top: 2px solid #c8f060;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 22px;
+            letter-spacing: 2px;
+            white-space: nowrap;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .label {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .value {
+            color: #c8f060;
+        }
+
+        .sep {
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="stats" id="stats">
+        <div class="stat-item">
+            <span class="label">PARTIES</span>
+            <span class="value" id="total">0</span>
+        </div>
+        <span class="sep">//</span>
+        <div class="stat-item">
+            <span class="label">TANUKI</span>
+            <span class="value" id="bot_wins">0</span>
+        </div>
+        <span class="sep">//</span>
+        <div class="stat-item">
+            <span class="label">HUMAINS</span>
+            <span class="value" id="human_wins">0</span>
+        </div>
+        <span class="sep">//</span>
+        <div class="stat-item">
+            <span class="label">NULS</span>
+            <span class="value" id="draws">0</span>
+        </div>
+        <span class="sep">//</span>
+        <div class="stat-item">
+            <span class="label">🦝</span>
+            <span class="value" style="color: #fff; font-size: 16px;">TANUKI-CORPORATION.BE</span>
+        </div>
+    </div>
+    <script>
+        async function updateStats() {
+            try {
+                const r = await fetch('/stats.json?t=' + Date.now());
+                const data = await r.json();
+                document.getElementById('total').textContent = data.total;
+                document.getElementById('bot_wins').textContent = data.bot_wins;
+                document.getElementById('human_wins').textContent = data.human_wins;
+                document.getElementById('draws').textContent = data.draws;
+            } catch (e) { }
+        }
+        updateStats();
+        setInterval(updateStats, 5000);
+    </script>
+</body>
+
+</html>
